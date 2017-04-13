@@ -5,17 +5,18 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
 
 import java.util.List;
 import java.util.UUID;
 
-public class CrimePagerActivity extends FragmentActivity {
+public class CrimePagerActivity extends AppCompatActivity {
     // This can be private, no on else has access to it
     private static final String EXTRA_CRIME_ID = "cz.zdrubecky.criminalintent.crime_id";
+    public static final String EXTRA_CRIME_IS_NEW = "cz.zdrubecky.criminalintent.crime_is_new";
 
     // By default, the pager loads two additional fragments, one on either side
     private ViewPager mViewPager;
@@ -60,9 +61,10 @@ public class CrimePagerActivity extends FragmentActivity {
         }
     }
 
-    public static Intent newIntent(Context packageContext, UUID crimeId) {
+    public static Intent newIntent(Context packageContext, UUID crimeId, boolean isNew) {
         Intent intent = new Intent(packageContext, CrimePagerActivity.class);
         intent.putExtra(EXTRA_CRIME_ID, crimeId);
+        intent.putExtra(EXTRA_CRIME_IS_NEW, isNew);
 
         return intent;
     }

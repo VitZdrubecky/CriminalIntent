@@ -2,10 +2,11 @@ package cz.zdrubecky.criminalintent;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AppCompatActivity;
 
-public abstract class SingleFragmentActivity extends FragmentActivity {
+// FragmentActivity lets me use the support library fragments, AppCompatActivity is its subclass and gives us a toolbar!
+public abstract class SingleFragmentActivity extends AppCompatActivity {
     // Returns the specific fragment to be added to the manager
     protected abstract Fragment createFragment();
 

@@ -18,6 +18,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
+import java.sql.Time;
 import java.util.Date;
 import java.util.UUID;
 
@@ -25,13 +26,16 @@ public class CrimeFragment extends Fragment {
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String KEY_CRIME_CHANGED = "crime_changed";
     private static final String DIALOG_DATE = "DialogDate";
+    private static final String DIALOG_TIME = "DialogTime";
     private static final int REQUEST_DATE = 0;
+    private static final int REQUEST_TIME = 1;
 
     private Crime mCrime;
     private boolean mCrimeChanged = false;
 
     private EditText mTitleField;
     private Button mDateButton;
+    private Button mTimeButton;
     private CheckBox mSolvedCheckBox;
 
     // This is a convention method, used to offer the arguments init right after the fragment has been created but before it'd been attached
@@ -88,7 +92,6 @@ public class CrimeFragment extends Fragment {
         });
 
         mDateButton = (Button) v.findViewById(R.id.crime_date);
-        updateDate(mCrime.getDate());
         mDateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -99,13 +102,28 @@ public class CrimeFragment extends Fragment {
                 // This frag is now the target of the dialog and is able to receive results
                 dialog.setTargetFragment(CrimeFragment.this, REQUEST_DATE);
 
-                // By putting in the manager, the dialog is added and commited for us using its unique name - we could do the same manually using transaction
+                // By putting in the manager, the dialog is added and committed for us using its unique name - we could do the same manually using transaction
                 // This setup is better suited for tablets, where the fragments can be stacked above one another
                 dialog.show(fragmentManager, DIALOG_DATE);
 
                 setCrimeChangedResult(true);
             }
         });
+
+        mTimeButton = (Button) v.findViewById(R.id.crime_time);
+        mTimeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager fragmentManager = getFragmentManager();
+                TimePickerFragment dialog = TimePickerFragment.newInstance(mCrime.getDate());
+
+                dialog.setTargetFragment(CrimeFragment.this, REQUEST_TIME);
+
+                dialog.show(fragmentManager, DIALOG_TIME);
+            }
+        });
+
+        updateDate(mCrime.getDate());
 
         mSolvedCheckBox = (CheckBox) v.findViewById(R.id.crime_solved);
         mSolvedCheckBox.setChecked(mCrime.isSolved());
@@ -128,7 +146,10 @@ public class CrimeFragment extends Fragment {
 
     // Set the result intent for the calling activity
     private void setCrimeChangedResult(boolean crimeChanged) {
-        mCrimeChanged = crimeChanged;
+        // Ugly hack to let the calling activity know to reload the whole crime list
+        boolean isCrimeNew = getActivity().getIntent().getBooleanExtra(CrimePagerActivity.EXTRA_CRIME_IS_NEW, false);
+
+        mCrimeChanged = !isCrimeNew && crimeChanged;
 
         Intent data = new Intent();
         data.putExtra(KEY_CRIME_CHANGED, crimeChanged);
@@ -154,11 +175,17 @@ public class CrimeFragment extends Fragment {
 
             mCrime.setDate(date);
             updateDate(mCrime.getDate());
+        } else if (requestCode == REQUEST_TIME) {
+            Date date = (Date) data.getSerializableExtra(TimePickerFragment.EXTRA_TIME);
+
+            mCrime.setDate(date);
+            updateDate(mCrime.getDate());
         }
     }
 
     private void updateDate(Date date) {
         DateFormat dateFormat = new DateFormat();
-        mDateButton.setText(dateFormat.format("EEEE, MMM dd, yyyy", mCrime.getDate()));
+        mDateButton.setText(dateFormat.format("EEEE, MMM dd, yyyy", date));
+        mTimeButton.setText(dateFormat.format("HH:mm", date));
     }
 }

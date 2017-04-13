@@ -10,13 +10,15 @@ import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
 import java.util.List;
-import java.util.UUID;
 
 public class CrimeListFragment extends Fragment {
     // The request code for the crime activity
@@ -28,6 +30,14 @@ public class CrimeListFragment extends Fragment {
     // This class is much easier to maintain than previous implementations with the additional advantage of View animations (like moving or deleting an item)
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // We must notify the parent activity that the fragment wants the events routed to it
+        setHasOptionsMenu(true);
+    }
 
     @Nullable
     @Override
@@ -54,6 +64,30 @@ public class CrimeListFragment extends Fragment {
         updateUI();
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        // Menu instance is now populated with the options
+        inflater.inflate(R.menu.fragment_crime_list, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_new_crime:
+                Crime crime = new Crime();
+                CrimeLab.get(getActivity()).addCrime(crime);
+
+                Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId(), true);
+                startActivity(intent);
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     private void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
@@ -64,6 +98,8 @@ public class CrimeListFragment extends Fragment {
             mCrimeRecyclerView.setAdapter(mAdapter);
         } else if (mCrimeChanged) {
             mAdapter.notifyItemChanged(mClickedCrimePosition);
+        } else {
+            mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -98,7 +134,7 @@ public class CrimeListFragment extends Fragment {
             mClickedCrimePosition = getAdapterPosition();
             Log.d("Crime", "Clicked position = " + mClickedCrimePosition);
 
-            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
+            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId(), false);
             startActivityForResult(intent, REQUEST_CRIME);
         }
     }
