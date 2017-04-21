@@ -153,6 +153,7 @@ public class CrimeFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_item_delete_crime:
+                // Remove the crime and finish the activity
                 if (CrimeLab.get(getActivity()).removeCrime(mCrime)) {
                     getActivity().finish();
                 }
@@ -161,6 +162,13 @@ public class CrimeFragment extends Fragment {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        CrimeLab.get(this.getActivity()).updateCrime(mCrime);
     }
 
     @Override

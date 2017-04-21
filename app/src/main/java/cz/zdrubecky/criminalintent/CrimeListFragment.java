@@ -16,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -95,11 +96,7 @@ public class CrimeListFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_item_new_crime:
-                Crime crime = new Crime();
-                CrimeLab.get(getActivity()).addCrime(crime);
-
-                Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId(), true);
-                startActivity(intent);
+                createNewCrime();
 
                 return true;
             case R.id.menu_item_show_subtitle:
@@ -141,16 +138,38 @@ public class CrimeListFragment extends Fragment {
                 mAdapter = new CrimeAdapter(crimes);
                 mCrimeRecyclerView.setAdapter(mAdapter);
             } else if (mCrimeChanged) {
+                // Refresh the adapter's "snapshot" of the crimes, it just lies there untouched thanks to SQLite (unlike the previous version with CrimeLab's global crimes)
+                // The Up button worked perfectly independent on this change because it forces the re-creation of this fragment, so the previous condition was met
+                mAdapter.setCrimes(crimes);
                 mAdapter.notifyItemChanged(mClickedCrimePosition);
             } else {
+                mAdapter.setCrimes(crimes);
                 mAdapter.notifyDataSetChanged();
             }
         } else {
-            RelativeLayout emptyList = (RelativeLayout) mView.findViewById(R.id.empty_list);
+            final RelativeLayout emptyList = (RelativeLayout) mView.findViewById(R.id.empty_list);
             emptyList.setVisibility(View.VISIBLE);
+
+            Button emptyListButton = (Button) mView.findViewById(R.id.empty_list_button);
+            emptyListButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    createNewCrime();
+
+                    emptyList.setVisibility(View.GONE);
+                }
+            });
         }
 
         updateSubtitle();
+    }
+
+    private void createNewCrime() {
+        Crime crime = new Crime();
+        CrimeLab.get(getActivity()).addCrime(crime);
+
+        Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId(), true);
+        startActivity(intent);
     }
 
     // This thing takes care of one view - exposes everything
@@ -224,6 +243,10 @@ public class CrimeListFragment extends Fragment {
         @Override
         public int getItemCount() {
             return mCrimes.size();
+        }
+
+        public void setCrimes(List<Crime> crimes) {
+            mCrimes = crimes;
         }
     }
 
