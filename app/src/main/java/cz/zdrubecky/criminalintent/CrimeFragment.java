@@ -1,6 +1,7 @@
 package cz.zdrubecky.criminalintent;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -53,6 +54,7 @@ public class CrimeFragment extends Fragment {
     private boolean mCrimeChanged = false;
     private File mPhotoFile;
     private Point mPhotoViewDimensions;
+    private Callbacks mCallbacks;
 
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
@@ -75,6 +77,24 @@ public class CrimeFragment extends Fragment {
         fragment.setArguments(args);
 
         return fragment;
+    }
+
+    // here we go, the same thing as in CrimeListFragment
+    public interface Callbacks {
+        void onCrimeUpdated(Crime crime);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        Activity a;
+        if (context instanceof Activity) {
+            a = (Activity) context;
+            mCallbacks = (Callbacks) a;
+        } else {
+            Log.d("CrimeFragment", "The activity attachment failed");
+        }
     }
 
     @Override
@@ -113,6 +133,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mCrime.setTitle(s.toString());
+                updateCrime();
             }
 
             @Override
@@ -161,6 +182,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 mCrime.setSolved(isChecked);
+                updateCrime();
                 setCrimeChangedResult(true);
             }
         });
@@ -300,6 +322,12 @@ public class CrimeFragment extends Fragment {
         outState.putBoolean(KEY_CRIME_CHANGED, mCrimeChanged);
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
     // Set the result intent for the calling activity
     private void setCrimeChangedResult(boolean crimeChanged) {
         // Ugly hack to let the calling activity know to reload the whole crime list
@@ -330,11 +358,13 @@ public class CrimeFragment extends Fragment {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
 
             mCrime.setDate(date);
+            updateCrime();
             updateDate(mCrime.getDate());
         } else if (requestCode == REQUEST_TIME) {
             Date date = (Date) data.getSerializableExtra(TimePickerFragment.EXTRA_TIME);
 
             mCrime.setDate(date);
+            updateCrime();
             updateDate(mCrime.getDate());
         } else if (requestCode == REQUEST_CONTACT && data != null) {
             Uri contactUri = data.getData();
@@ -356,6 +386,7 @@ public class CrimeFragment extends Fragment {
                 c.moveToFirst();
                 String suspect = c.getString(0);
                 mCrime.setSuspect(suspect);
+                updateCrime();
                 mSuspectButton.setText(suspect);
 
                 // TODO get the fucking ID
@@ -366,8 +397,15 @@ public class CrimeFragment extends Fragment {
                 c.close();
             }
         } else if (requestCode == REQUEST_PHOTO) {
+            updateCrime();
             updatePhotoView();
         }
+    }
+
+    // Save the crime in the lab and inform whoever's listening of it happening
+    private void updateCrime() {
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
+        mCallbacks.onCrimeUpdated(mCrime);
     }
 
     private void updateDate(Date date) {

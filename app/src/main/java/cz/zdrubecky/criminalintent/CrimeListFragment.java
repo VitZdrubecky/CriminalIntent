@@ -1,6 +1,7 @@
 package cz.zdrubecky.criminalintent;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -32,10 +33,34 @@ public class CrimeListFragment extends Fragment {
     private boolean mCrimeChanged = false;
     private boolean mSubtitleVisible;
     private View mView;
+    // The "listener" activity
+    private Callbacks mCallbacks;
 
     // This class is much easier to maintain than previous implementations with the additional advantage of View animations (like moving or deleting an item)
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
+
+    // using this interface, the fragment can call activity's methods no matter what activity is currently hosting, as long as it implements the interface
+    // this works like a listener to let the activity know what happened
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime, boolean isNew, int requestCode);
+    }
+
+    // Support method, onAttach(Activity activity) is deprecated
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        Activity a;
+        if (context instanceof Activity) {
+            a = (Activity) context;
+
+            // MAKE SURE the activity implements the interface (it throws an exception otherwise)
+            mCallbacks = (Callbacks) a;
+        } else {
+            Log.d("CrimeListFragment", "The activity attachment failed");
+        }
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -113,6 +138,13 @@ public class CrimeListFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        // We can't count on the activity's existence anymore
+        mCallbacks = null;
+    }
+
     private void updateSubtitle() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         int crimeCount = crimeLab.getCrimes().size();
@@ -128,7 +160,7 @@ public class CrimeListFragment extends Fragment {
         activity.getSupportActionBar().setSubtitle(subtitle);
     }
 
-    private void updateUI() {
+    public void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
 
@@ -168,8 +200,11 @@ public class CrimeListFragment extends Fragment {
         Crime crime = new Crime();
         CrimeLab.get(getActivity()).addCrime(crime);
 
-        Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId(), true);
-        startActivity(intent);
+//        Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId(), true);
+//        startActivity(intent);
+        // Update the list immediately so that the new crime is present
+        updateUI();
+        mCallbacks.onCrimeSelected(crime, true, REQUEST_CRIME);
     }
 
     // This thing takes care of one view - exposes everything
@@ -197,14 +232,16 @@ public class CrimeListFragment extends Fragment {
             mSolvedCheckBox.setChecked(mCrime.isSolved());
         }
 
+        // Regarding the two pane layout - we could create a new crime fragment here and append it to the manager, but that would need it to make an assumption
+        // about the underlying structure, namely "where" to put it (the second pane), which contradicts the fragment's isolation (it's activity should know these things)
+        // We rather call the interface method, eg the listener
         @Override
         public void onClick(View v) {
             // Set the crime's position for later use
             mClickedCrimePosition = getAdapterPosition();
             Log.d("Crime", "Clicked position = " + mClickedCrimePosition);
 
-            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId(), false);
-            startActivityForResult(intent, REQUEST_CRIME);
+            mCallbacks.onCrimeSelected(mCrime, false, REQUEST_CRIME);
         }
     }
 

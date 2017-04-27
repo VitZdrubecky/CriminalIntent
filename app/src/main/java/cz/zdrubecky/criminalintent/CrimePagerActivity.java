@@ -13,7 +13,10 @@ import android.support.v7.app.AppCompatActivity;
 import java.util.List;
 import java.util.UUID;
 
-public class CrimePagerActivity extends AppCompatActivity {
+// This class might implement the interface as well as the target (CrimeListActivity) - because...Well, it doesn't need to, really.
+public class CrimePagerActivity
+        extends AppCompatActivity
+        implements CrimeFragment.Callbacks {
     // This can be private, no on else has access to it
     private static final String EXTRA_CRIME_ID = "cz.zdrubecky.criminalintent.crime_id";
     public static final String EXTRA_CRIME_IS_NEW = "cz.zdrubecky.criminalintent.crime_is_new";
@@ -68,4 +71,7 @@ public class CrimePagerActivity extends AppCompatActivity {
 
         return intent;
     }
+
+    @Override
+    public void onCrimeUpdated(Crime crime) {}
 }

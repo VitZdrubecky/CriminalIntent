@@ -1,19 +1,17 @@
 package cz.zdrubecky.criminalintent;
 
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 
 // FragmentActivity lets me use the support library fragments, AppCompatActivity is its subclass and gives us a toolbar!
 public abstract class SingleFragmentActivity extends AppCompatActivity {
-    // Returns the specific fragment to be added to the manager
-    protected abstract Fragment createFragment();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_fragment);
+        setContentView(getLayoutResId());
 
         FragmentManager fm = getSupportFragmentManager();
         Fragment fragment = fm.findFragmentById(R.id.fragment_container);
@@ -27,4 +25,13 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
                 .commit();
         }
     }
+
+    // Let the subclasses return their own layouts instead of this default one
+    @LayoutRes
+    protected int getLayoutResId() {
+        return R.layout.activity_fragment;
+    }
+
+    // Returns the specific fragment to be added to the manager
+    protected abstract Fragment createFragment();
 }
