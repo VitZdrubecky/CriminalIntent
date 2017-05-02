@@ -216,6 +216,7 @@ public class CrimeListFragment extends Fragment {
 
         public CrimeHolder(View itemView) {
             super(itemView);
+            // Handle the click on its own item
             itemView.setOnClickListener(this);
 
             // The expensive find() calls are only run once, during the holder instantiation
